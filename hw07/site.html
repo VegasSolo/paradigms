@@ -1,0 +1,212 @@
+<!doctype html>
+
+<html>
+<head>
+
+	<title>Dillon VanBuskirk's Assignment 7</title>
+	
+	<h1>Dillon VanBuskirk's Assignment 7</h1>
+	
+</head>
+
+<body>
+
+	<p id="p"></p>
+	<div id="formP">
+		<form name="gradeform" onsubmit="return calculateGrade()">
+		First Name: <input type="text" name="firstname" id="firstname" value="Dillon">
+		<br>
+		Last Name: <input type="text" name="lastname" id="lastname" value="VanBuskirk">
+		<br>
+		Homework Grades: <input type="text" name="hw" id="hw" value="80,80,90,90">
+		<br>
+		Activity Grades: <input type="text" name="activities" id="activies" value="90,100">
+		<br>
+		Midterm Exam Percentage: <input type="text" name="midperc" id="midperc" value="80">
+		<br>
+		Midterm Exam Letter Grade: <input type="text" name="midletter" id="midletter" value="B">
+		<br>
+		Final Exam Percentage: <input type="text" name="finalperc" id="finalperc" value="90">
+		<br>
+		Final Exam Letter Grade: <input type="text" name="finalletter" id="finalletter" value="A">
+		<br><br>
+		<input type="submit" value="Submit">
+		</form>
+	</div>
+	<p id="pReturn"><button type="button" id="returnB" onclick="goBack()" style="display: none;">Go Back</button></p>
+	
+</body>
+
+<script>
+
+	function calculateGrade() {
+		var s1 = new Student(document.forms["gradeform"]["firstname"].value, document.forms["gradeform"]["lastname"].value);
+		s1.setMidterm(document.forms["gradeform"]["midperc"].value, document.forms["gradeform"]["midletter"].value);
+		s1.setFinal(document.forms["gradeform"]["finalperc"].value, document.forms["gradeform"]["finalletter"].value);
+		var homeworks = document.forms["gradeform"]["hw"].value;
+		var hw = "";
+		for (var i = 0; i < homeworks.length; i++) {
+			if (homeworks[i] != ',') {
+				hw = hw.concat(homeworks[i]);
+			}
+			else if (homeworks[i] == ',') {
+				s1.addGradedHomework(hw);
+				hw = "";
+			}
+			else {
+				console.log('Error. Incorrect Homework input.');
+			}
+		}
+		s1.addGradedHomework(hw);
+		var activity = document.forms["gradeform"]["activities"].value;
+		var act = "";
+		for (var i = 0; i < activity.length; i++) {
+			if (activity[i] != ',') {
+				act = act.concat(activity[i]);
+			}
+			else if (activity[i] == ',') {
+				s1.addGradedActivity(act);
+				act = "";
+			}
+			else {
+				console.log('Error. Incorrect Activity input.');
+			}
+		}
+		s1.addGradedActivity(act);
+		
+		var gradeLetter = s1.getGrade();
+		var gradePerc = s1.getGradePerc();
+		var nameLast = document.forms["gradeform"]["lastname"].value;
+		var nameFirst = document.forms["gradeform"]["firstname"].value;
+		document.getElementById("formP").style.display="none";
+		document.getElementById("p").innerHTML = "Final course grade for " + nameFirst + " " + nameLast + " is " + gradeLetter + " (" + gradePerc + "%)";
+		document.getElementById("returnB").style.display = "inline";
+		return false;
+	}
+	
+	function goBack() {
+		document.getElementById("returnB").style.display = "none";
+		document.getElementById("formP").style.display="inline";
+		document.getElementById("p").innerHTML = "";
+	}
+	
+	function Exam() {
+		var score = 0;
+		var letterGrade = "F";
+		
+		this.getScore = function () {
+			return score;
+		}
+		this.getLetterGrade = function () {
+			return letterGrade;
+		}
+		this.setScore = function (pScore) {
+			if (pScore < 0) {
+				pScore = 0;
+			}
+			else if (pScore > 100) {
+				pScore = 100;
+			}
+			score = pScore;
+		}
+		this.setLetterGrade = function (pLetter) {
+			if (pLetter != "A" && pLetter != "B" && pLetter != "C" && pLetter != "D" && pLetter != "F") {
+				console.log("An incorrect letter grade was entered.");
+				pLetter = "F";
+			}
+			letterGrade = pLetter;
+		}
+	}
+	
+	function Coursework() {
+		var totalScores = 0;
+		var numScores = 0;
+		
+		this.addScore = function(pScore) {
+			numScores++;
+			if (pScore < 0) {
+				pScore = 0;
+			}
+			else if (pScore > 100) {
+				pScore = 100;
+			}
+			totalScores += (parseInt(pScore,10));
+		}
+		this.getAverage = function() {
+			return (totalScores / numScores);
+		}
+	}
+	
+	function Student(first, last) {
+		var firstName = first;
+		var lastName = last;
+		var midtermExam = new Exam();
+		var finalExam = new Exam();
+		var homework = new Coursework();
+		var activities = new Coursework();
+		
+		this.setMidterm = function (score, grade) {
+			midtermExam.setScore(score);
+			midtermExam.setLetterGrade(grade);
+		}
+		this.setFinal = function (score, grade) {
+			finalExam.setScore(score);
+			finalExam.setLetterGrade(grade);
+		}
+		this.addGradedHomework = function (score) {
+			homework.addScore(score);
+		}
+		this.addGradedActivity = function (score) {
+			activities.addScore(score);
+		}
+		
+		this.testLowestLetter = function (midLetter, finalLetter, totalLetter) {
+			var letter;
+			var result = midLetter.localeCompare(finalLetter);
+			if (result > 0) {
+				letter = midLetter;
+			}
+			else {
+				letter = finalLetter;
+			}
+			result = letter.localeCompare(totalLetter);
+			if (result > 0) {
+				letter = totalLetter;
+			}
+			return letter;
+		}
+		this.getGrade = function () {
+			var Grade = 0;
+			var Letter;
+			
+			Grade = this.getGradePerc();
+			if (Grade >= 90.00) {
+				Letter = "A";
+			}
+			else if (Grade >= 80.00) {
+				Letter = "B";
+			}
+			else if (Grade >= 70.00) {
+				Letter = "C";
+			}
+			else if (Grade >= 60.00) {
+				Letter = "D";
+			}
+			else {
+				Letter = "F";
+			}
+			
+			Letter = this.testLowestLetter(midtermExam.getLetterGrade(), finalExam.getLetterGrade(), Letter)
+			
+			console.log(Grade);
+			console.log(Letter);
+			return Letter;
+		}
+		this.getGradePerc = function() {
+			return (activities.getAverage() * .15) + (homework.getAverage() * .25) + (midtermExam.getScore() * .25) + (finalExam.getScore() * .35);
+		}
+	}
+
+</script>
+
+</html>
